@@ -1,0 +1,1690 @@
+///////////////////////////////////////////////////////////////////////////////
+
+version="version algebra.lib 4.0.1.1 Dec_2014 "; // $Id: 2bb3191198fbd2218ed724a0340d9b6d804e14b8 $
+category="Commutative Algebra";
+info="
+LIBRARY:  algebra.lib   Compute with Algbras and Algebra Maps
+AUTHORS:  George krait   krait@mathematik.uni-kl.de,
+SUPERVISOR: Prof. Dr. Mathias schulze mschulze@mathematik.uni-kl.de         
+
+PROCEDURES:
+StaAlgeb(list)   
+reguelem(list)
+SemiRing(list)
+SemiRing (list)
+SemiRingbar(list F)
+";
+
+ LIB "inout.lib";
+ LIB "ring.lib";
+ LIB "matrix.lib";
+ LIB "curvepar.lib";
+ LIB "qhmoduli.lib";
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+proc StaAlgeb (list L)
+" USAGE:     StaAlgeb(Param);
+              L=Param is a list computed by the procedure CurveParam(I) (LIB curvepar.lib),
+              where I is an ideal of dimension one and defines an algebroid curve A ;
+  COMUPTE:   a list F, where F[1] is a standard basis of A and F[2] an upper bound of the conductor.    
+  ASSUME:    I is an ideal of dim one "
+{
+ list S0=reguelem(L);
+
+ list c=S0[2];
+ list S1=S0[1];
+ list S2=biprime(L);int z;
+ list S3=bounelemnts(L,c);
+ for (z=1;z<= size(S2);z++)
+    {
+      S1=insert(S1,S2[z]);
+    }
+ int i;
+ for (i=1;i<=size(S3);i++)
+  {
+    S1=insert(S1,S3[i]);
+  }
+ S1=rezer(S1);
+ S1=remrep3(S1);
+ list V=S1,c;
+ return(V)  
+}
+/////////////////////////////////
+/////////////////////////////////
+///////////////////////////////
+proc reguelem(list L )
+" USAGE:     reguelem(Param);
+              L=Param is a list computed by the procedure CurveParam(I) (LIB curvepar.lib),
+              where I is an ideal of dimension one and defines an algebroid curve A ;
+  COMUPTE:   A set V which contains the output of Algorithms  3.2.11 and 3.3.9;     
+  ASSUME:    I is an ideal of dim one "
+{
+ option(noredefine);
+ list g0;list g; list c;list g2;int k;
+ for (k=1;k<=size(L);k++)
+   {
+    g0[k]=L[k][1];
+   }
+ g=trans(g0);
+ c=conda(g);
+
+ list g1=g;
+list S=oniter2(g1,c); int i;
+ while(size(S) !=0)
+   {
+     for(i=1;i<= size(S);i++)
+       {
+        g1=insert(g1,S[i]);
+       }
+     S=oniter2(g1,c);
+   }    
+  g1=remrep3(g1);                   ////////Now, every regular element admits a  reduction by g1.
+ list V=g1,c;
+return (V);
+option(redefine);
+}
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+proc SemiRing (list F)
+" USAGE:      SemiRing (list F);
+              F=Param is a list computed by the procedure CurveParam(I) (LIB curvepar.lib ),
+              where I is an ideal of dimension one and defines an algebroid curve A ;
+  COMUPTE:   A set of generators of Gamma_A (Definition 2.6.4);     
+  ASSUME:    I is an ideal of dim one "
+{
+ list g=reguelem(F)[1]; list L;
+ int i;
+ for (i=1;i<=size(g);i++)
+    {
+     L[i]=val(g[i]);
+    }
+ return(L);
+}
+/////////////////////////////////////////
+/////////////////////////////////////////
+proc SemiRingbar (list F)
+" USAGE:      SemiRingbar (list F);
+              F=Param is a list computed by the procedure CurveParam(I) (LIB curvepar.lib ),
+              where I is an ideal of dimension one and defines an algebroid curve A ;
+  COMUPTE:   A set of generators of the associated semiring of A;     
+  ASSUME:    I is an ideal of dim one "
+{
+ list g=StaAlgeb(F)[1]; list L;
+ int i;
+ for (i=1;i<=size(g);i++)
+    {
+     L[i]=val(g[i]);
+    }
+ return(L);
+}
+/////////////////////////////////////////
+/////////////////////////////////////////
+proc biprime(list L)
+" USAGE:     biprime(Param);
+              L=Param is a list computed by the procedure CurveParam(I) (LIB curvepar.lib),
+              where I is an ideal of dimension one and defines an algebroid curve A ;
+  COMUPTE:   A list E1 which is the output of Algorithms  3.2.11;
+  ASSUME:    I is an ideal of dim one "
+{
+ ring A= basering;
+ list g; list c;list g2;
+ int k;
+ for (k=1;k<=size(L);k++)
+  {
+   g2[k]=L[k][1];
+  }
+ g=trans(g2);
+ c=conda(g);
+ list T1=ImageCompos(g);     ///T1[1][i]=P*_i., T[2][i]=phi_i (Notation  3.3.8.(b))
+ list T=T1[1]; list T2=T1[2]; int k; list Z; list comp = trans(g);list Z1;
+ int k1;int k2;
+ for(k1=1;k1<=size(T);k1++)
+  {
+    Z[k1]=list();
+    for(k2=1;k2<=size(T[k1]);k2++)
+      { 
+        Z[k1][k2]=T[k1][k2];
+      }
+   }                                                          ///// Z[i] contains the generators of the ideal T[i] as a list. //////
+
+ for(k=1;k<=size(g[1]);k++)
+   { comp[k]=combas(comp[k],comp[k],c[k]);
+     Z1[k]=combas(Z[k],comp[k],c[k]);                            ////// Z1[i] is a standard basis of the i-th branch. ///// 
+   }
+
+ int r=size(g); int s=size(g[1]);
+ ring R=0, (x(1..r)),dp; 
+ list F;list kr;poly elem;list F2; list kr2; poly elem2; ideal P2;
+ setring A;
+ ideal P;
+ map phi;
+ int a; int x;
+ for (a=1;a<=s;a++)
+  {
+   setring A;
+   phi=T2[a];
+   P=Z1[a][1];
+   for(x=2;x<=size(Z1[a]);x++)
+     {
+       P=P,Z1[a][x];
+     }
+   setring R;
+   F[a]=preimage(A,phi,P);
+   kr[a]=size(F);
+  }
+ 
+ for (a=1;a<=s;a++)
+  {
+   setring A;
+   phi=T2[a];
+   P=comp[a][1];
+   for(x=2;x<=size(comp[a]);x++)
+     {
+       P=P,comp[a][x];
+     }
+   setring R;
+   F2[a]=preimage(A,phi,P);
+   kr2[a]=size(F2);
+  }
+
+ setring A;
+ list E;int e1;int e2;int e3;int e4=1; list E2;
+ for(e1=1;e1<=size(kr);e1++)
+   {
+     for(e2=1;e2<=kr[e1];e2++)
+       {
+         E[e4]=list();
+         for(e3=1;e3<=size(g[1]);e3++)
+            {
+              setring R;
+              elem= F[e1][e2];
+              setring A;
+              phi=T2[e3];
+              E[e4][e3]=phi(elem);
+            }
+         e4++;
+       }
+   }
+ e4=1;
+ for(e1=1;e1<=size(kr2);e1++)
+   {
+     for(e2=1;e2<=kr2[e1];e2++)
+       {
+         E2[e4]=list();
+         for(e3=1;e3<=size(g[1]);e3++)
+            {
+              setring R;
+              elem2= F2[e1][e2];
+              setring A;
+              phi=T2[e3];
+              E2[e4][e3]=phi(elem2);
+            }
+         e4++;
+       }
+   }
+
+ int v;
+ for(v=1;v<=size(E2);v++)
+   {
+    E=insert(E,E2[v]);
+   }
+ list E1=remrep(E); 
+ E1=remrep3(E1);
+ return(E1);  
+                
+}
+//////////////////////////////////////////////////////////
+//// Computes S(g) (Notation 3.3.8 (c))./////////////////
+//////////////////////////////////////////////////////////
+proc oniter(list g,c)
+{
+ list g1=g;int r=size(g);int s=size(g[1]);ideal zero;
+ ring A = basering; 
+ ring R = 0,(x(1..r)),lp;
+ list kr;list Fgam;ideal E;
+ setring A;
+ ideal q;
+ int i;int j;ideal p;list F; map Lphi;                ////// We compute the kernel of Lphi_i for every component i and we set F[i]= the kernel Lphi_i. ////////
+ for(i=1;i<= s;i++)
+    {
+      p=lphimap(g,i);
+      Lphi=R,p;
+      setring R;
+      F[i]=std(preimage(A,Lphi,zero));
+      kr[i]= size(F[i]);
+      setring A;     
+    }
+    
+ 
+ list mapps; map phi;mapps[1]=phi;  ideal B;                  ////// We define the phi map which is given componentwise./////// 
+ int k;
+  for(k=1;k<=s;k++)
+     {
+       phi=(R,phimap(g,k));
+       mapps[k]=phi;
+     }
+ list N=undcon2(c);int k1;int k2;int k3;int k4=1;list kr1;
+ for(k1=1;k1<=size(kr);k1++)
+    {
+       for(k2=1;k2<=size(N);k2++)
+         { setring R;
+           Fgam[k4]=F[k1];
+           for(k3=1;k3<=size(N[1]);k3++)
+             {
+               setring A;
+               phi=mapps[k3];
+               B=power(t,N[k2][k3]);
+               setring R;
+               Fgam[k4]=intersect(Fgam[k4],preimage(A,phi,B));
+             }
+          k4++;
+         }
+ 
+     }  
+                                                    ///Fgam[i] is the ideal generated by F^k_{gamma} (Notation 3.3.8.(b)) 
+ Fgam=remrep2(Fgam);int e1;
+	
+ for (e1=1;e1<=size(Fgam);e1++)
+    {
+       
+             kr1[e1]=size(Fgam[e1]);
+     }
+
+ setring A;	
+ list Z=list();Z[1]=list();                                /////Z contains the images of the kernel generators (the elements in F) under phi./
+ int e1; int e2;int e3;int e4=1;
+ for (e1=1;e1<=size(kr1); e1++)
+    {
+     for (e2=1;e2<=kr1[e1]; e2++)
+       {
+         for (e3=1;e3<=s; e3++)
+           {
+             setring R;
+             poly FF=Fgam[e1][e2];
+             setring A;
+             phi=mapps[e3];
+             Z[e4][e3]=phi(FF);
+           }
+         e4++;
+         Z[e4]=list();
+//// 
+       }
+    }
+ Z=delete(Z,size(Z));                                         ///////Because the last element of Z is empty.//// 
+ list Z1=rezer(Z);                                            ////// Remove the  zero vectors from Z./////
+ list Z2= remrep(Z1);                                         ////// If Z[i] = Z[j], for i=\= j, then remove Z[j].///
+ return (Z);
+}
+//////////////////////////////////////////////////////////////
+/////Computes Rho(g) (Notation 3.3.8 (c)).////////////////////
+///////////////////////////////////////////////////////////////
+proc oniter2(list g,c)
+{
+ list S=oniter(g,c);list F;
+ int i;
+ for (i=1;i<=size(S);i++)
+   {
+     if (compar(val3(reduc(S[i],g,c)),c) ==0)
+      {
+        F=insert(F,S[i]);
+      }
+   }
+ return(F);
+}                     
+/////////////////////////////////////////////////////
+////it finds an integer b such that h[b] is nonzero./ 
+/////////////////////////////////////////////////////
+proc firnon( list h)
+{
+ int i=1;int b=0;
+ while (b==0)
+  {
+    if (h[i]!=0)
+     {
+      b=i;
+     }
+   i=i+1;
+  }
+ return(b);
+}
+////////////////////////////////////////////////////////////////////
+//Computes a list S such that S[i]=(P_i)* (Step(3) Algorithm 2.6.7 ).
+/////////////////////////////////////////////////////////////////////
+proc idint(list F)
+{
+ int k;ideal p=1;list S;
+ for (k=1;k<=size(F);k++)
+   {
+     S[k]=p;
+   }
+ int i; int j;
+ for(i=1;i<=size(F);i++)
+   {
+     for(j=1;j<=size(F);j++)
+       {
+         if(i!=j)
+            {
+              S[i]=intersect(S[i],F[j]);
+            }
+
+        }
+
+   }
+return(S);
+}
+//////////////////////////////////////////////////////////
+///F is a list of polynomials. minval4(F):=min{ord(F[i])}/ 
+//////////////////////////////////////////////////////////
+proc minval4 ( list F)
+{
+ int i;list L;int L1=0;int a=1;
+ for (i=1;i<=size(F); i++)
+   {
+     L[a]=ord(F[i]); 
+     a++;
+   }
+ int k1; int b=L[1];
+ for(k1=1;k1<=size(L); k1++)
+   {
+     b=min(b,L[k1]);
+   }
+return(b);
+}
+/////////////////////////////////////////////////////
+//It removes the zero generators of the ideal F[i]./////
+/////////////////////////////////////////////////////
+proc remidezer (list F)
+{
+ list L ; int k;
+ for (k=1;k<= size(F);k++)
+   { 
+     L[k]=list();	
+   }
+ int i ; int j; 
+ for (i=1;i<= size(F);i++)
+   {
+     for (j=1;j<= size(F[i]);j++)
+       {
+        if (F[i][j]!=0)
+          {
+            L[i]= insert(L[i],F[i][j]);
+          }
+       }
+   }
+ int a;
+ for (a=1; a<=size(L); a++)
+   {
+     if (size(L[a])==0)
+       {
+         L[a]=0;
+       }
+   }
+ return(L);
+}
+///////////////////////////////////////////////////////////////////////////////
+//It computes the list of orders of F[i][j] (after removing the zero elements).
+/////////////////////////////////////////////////////////////////////////////// 
+proc miord(list F)
+{
+ int i;list L;int j;list T=remidezer(F);
+ for (i=1;i<=size(F);i++)
+   {
+     L[i]=minval4(T[i]);
+   }
+return(L)
+}
+/////////////////////////////////////////////////////////////////////////
+////////// Returns the the imges of P*_i under phi and the mapps phi.////
+/////////////////////////////////////////////////////////////////////////
+proc ImageCompos(list g)
+{
+ int r=size(g); int s=size(g[1]);
+ ring A= basering;
+ list S;int i;int k;
+ for(i=1;i<=s;i++)
+  {
+     S[i]=phimap(g,i);
+  } 
+
+ ideal y=0;list mapps;
+ ring R=0,(x(1..r)),dp;
+ ideal dom;
+ list F;
+ ideal v;
+ setring A;
+ int i1; int i2;map phi;
+ for(i1=1;i1<=s;i1++)
+  {
+    phi=(R,S[i1]);
+    mapps[i1]=phi;
+    setring R;
+    F[i1]= preimage(A,phi,y);
+    setring A;                                                      ///////F[i] is the ideal  P_i.//////
+  }
+
+ setring R;
+ list F1=idint(F);                                                   /////////F1[i] is the ideal P*_i. ////
+ setring A;
+ list imofst;int z;
+ for(z=1;z<=s;z++)
+   {
+     setring R;                      
+     dom=F1[z];
+     setring A;
+     phi=mapps[z];
+     imofst[z]=phi(dom);                                            //////// imofst[i] is the image of P*_i under phi.////////////
+   }
+
+ list DD= imofst, mapps;
+ return (DD);
+}
+////////////////////////////////////////////////
+///Removes zero elements from the list g.///////
+////////////////////////////////////////////////
+proc remzeros( list g)
+{
+ int j;int i; list L;int k=1;
+ for(i=1;i<=size(g);i++)
+   {
+     L[i]=list();
+     for(j=1;j<=size(g[i]);j++)
+       {
+         if (g[i][j] !=0)
+           {
+             L[i][k]=g[i][j];
+             k++;
+           }
+       }
+     k=1;
+
+   }
+return(L)
+}
+/////////////////////////////////////////////////////////
+//Computes an upper bound of the conductor (Algo 2.6.7)./
+/////////////////////////////////////////////////////////
+proc conda(list g)
+{
+ list G=miord(ImageCompos(g)[1]);
+ int a;list L;list L1;
+ list X1=trans(g);
+ list X=remzeros(X1);
+ for (a=1;a<=size(X);a++)
+   {
+     L[a]=WSemigroup(X[a],30);
+     L1[a]=L[a][2];
+   }
+ list RR=suup2(L1,G);
+ return(RR);
+}
+////////////////////////////////////////////////////////
+//Algorithm 3.3.3, where m does not have zero elements//
+////////////////////////////////////////////////////////
+proc prod( int n, list m)
+{ 
+option(noredefine);
+	list F;
+	if (size(m)==0) {  F=list ();};
+	if (size(m)==1) 
+	{        
+
+		if ((n % m[size(m)]) == 0) {  list r= (n div m[1]); F=list(r);}
+		if ((n % m[size(m)]) != 0) {  F= (list())}
+	} ;
+	if(2<= size(m))
+	{          
+		list L=m;
+                int e=firnon(L);
+		L=delete(L,e); int i;list S;
+		for (i=0;i<=(n div m[e]) ; i++)
+		{  
+			if (size( prod(n-(i*m[e]),L))!=0 )
+			{
+				int j;
+				list smaller_solutions = prod(n-(i*m[e]), L);
+				for (j=1;j<=size(smaller_solutions);j++)
+				{
+					S[j] = smaller_solutions[j];
+					S[j]=insert(S[j],i,e-1); 
+				}
+				int k;
+				for (k=1; k<= size(S);k++)
+				{
+					F= insert(F,S[k]);
+				}        
+
+			}
+		}     
+
+	};
+return(remrep(F)) ;       
+}
+///////////////////////////////////////////////
+/////Removes the zero elements of m.///////////
+///////////////////////////////////////////////
+proc proj( list m )
+{
+ int k; list L=list();int t=1;
+ for (k=1;k<=size(m);k++)
+   {
+    if(m[k] != 0)
+     {
+       L[t]=m[k];
+       t++;
+     }
+   }
+ return(L);
+}
+
+/////////////////////////////////////////////////
+////L[i]=m[i],if m[i]=/=0. L[i]=a[i], otherwise//
+////////////////////////////////////////////////
+proc proj2(list m, list a)
+{
+ int i ; int k=1 ; list L=m;
+ for (i=1;i<=size(m);i++)
+   {
+     if(m[i] !=0 )
+      {
+        L[i]=a[k];
+        k++;
+      }
+   }
+ return(L);
+}
+////////////////////////////
+/////Algorithm 3.3.3,///////
+////////////////////////////
+proc sol(int n, list m)
+{
+ list L=proj(m);
+ list F=prod(n,L);
+ int i;
+ for (i=1;i<=size(F);i++)
+   {
+     F[i]=proj2(m,F[i]);
+   }
+ return(F);
+}
+///////////////////////////////////////////////////
+//whether there exists, i with g[i]=0 && c[i]!=0///
+///////////////////////////////////////////////////
+proc comp( list g, list c)
+{
+ int i; int b=0;
+ for(i=1;i<=size(g);i++)
+  {
+   if ((g[i]==0) && (c[i] !=0) )
+    {
+      b=1; 
+    }
+  }
+ return(b)
+}
+
+/////////////////////////////////////////
+////Computes the transform of a list m///
+/////////////////////////////////////////
+proc trans(list m)
+{
+ int r=size(m);int s=size(m[1]); list a=0;
+ int i;int j; int i1;int j1;list F;for(i1=1;i1<=s;i1++) 
+ {F[i1]=a;};
+ for(i=1;i<=s;i++)
+   { 
+     for(j=1;j<=r;j++)
+      { 
+        F[i][j]=m[j][i];
+      }
+   }
+ return (F);
+}
+///////////////////////////
+//val3(g)[i]= order(g[i])//
+///////////////////////////
+proc val3 (list g)
+{
+
+ int i ;list F=list();
+ for(i=1;i<=size(g);i++)
+  {
+    if ( g[i]!=0)
+     { 
+       F[i]=ord(g[i]);
+     } 
+    if ( g[i]==0) 
+     { 
+       F[i]=0;
+     } 
+  }
+ return (F);
+}
+///////////////////////////////////////////
+///Whether there is reduction h-cg^a ///
+///////////////////////////////////////////
+proc finprod(list h, list g, list a)
+{
+ int l; list B=list(); int r ;
+ for(r=1;r<= size(h);r++) 
+   {
+    B[r]=0 ;
+   }
+ list Z=list();
+ for(l=1;l<=size(h);l++)
+   {     
+     if (comp(trans(g)[l],a)==1) 
+       {
+         B[l]=1;
+       };    
+     if (comp(trans(g)[l],a)==0)
+       {
+         Z[l]=val3(trans(g)[l]);
+         if (val3(h)[l] <=sca(Z[l],a) && val3(h)[l] !=0	)
+           {
+             B[l]=1;
+           }    
+       }
+   
+    }
+ int u1; int u=1;
+ for (u1=1;u1<= size(h);u1++)
+   {
+     if (B[u1] !=1)
+       {
+         u=0;
+       }
+    }
+ return(u)
+} 
+//////////////////////////////////////////////
+//Computes Delta_k(h), (Notation 3.3.4)///////
+//////////////////////////////////////////////
+proc choprod(list h,list g, int k)
+{
+ list F=list(); list S= sol(val3(h)[k],val3(trans(g)[k]));int i;
+ for (i=1;i<=size(S);i++)
+   {
+     if(finprod(h,g,S[i])==1)
+       {
+         F=insert(F,S[i]);
+       }
+    } 
+ return(F);
+}
+////////////////////////////////////////////////////
+///Computes Gamma_c(h), (Notation 3.3.4)/////////////
+/////////////////////////////////////////////////////
+proc gamma( list h,list g,list c)
+{
+ int i=1; list F=list();int z;
+ list S;
+ for(i=1;i<=size(h);i++)
+    {
+      S[i]=choprod(h,g,i);
+    }
+ int k;list T=list(); 
+ for(k=1;k<=size(S);k++)
+    {
+      if ((size(S[k]) !=0) && (val3(h)[k] <= c[k]) &&(h[k]!=0))
+       {
+         T=insert(T,k);
+       }
+    }
+ return(T);
+}
+/////////////////////////////
+/////Computes m x n^T  //////
+/////////////////////////////
+proc  sca(list n,list m)
+{
+ int x;int i;
+ for (i=1;i<=size(n);i++)
+  {
+   x=x+n[i]*m[i];
+  }
+ return (x);
+}
+///////////////////////////
+////Computes h^n //////////
+///////////////////////////
+proc power( poly h, int n)
+{
+ poly f=1; int i;
+ for(i=1; i<=n; i++)
+   {
+     f=f*h;
+   }
+ return(f);
+}
+
+/////////////////////////////////
+/////computes  the vector g^a////
+/////////////////////////////////
+proc gproda (list g, list a)
+{ 
+  int i;list F;   
+  for (i=1; i<= size(g[1]); i++)
+    {    
+      F[i]=1;    
+    }
+  int k1;int k2;
+  for (k1=1;k1<=size(g);k1++)
+    {
+      for (k2=1;k2<=size(g[1]);k2++)
+        {
+          F[k2]=F[k2]* power(g[k1][k2],a[k1]);
+        }
+    }     
+ return(F); 
+}
+
+/////////////////////////////////////
+////Algorithm 3.3.5//////////////////
+/////////////////////////////////////
+proc reduc ( list f, list g , list c)
+{
+ list h= f;list S=list();int k=1;poly co=1;
+ while (size(gamma(h,g,c)) !=0  )
+   {
+     k=gamma(h,g,c)[1];list L= choprod(h,g,k)[1];list H= gproda(g,L);
+     co=(leadcoef(h[k])) / (leadcoef(H[k]));
+     int e;                
+     for(e=1;e<=size(h);e++)
+         {
+            h[e]=h[e]-co * H[e];
+          }  
+   }
+ return(h)
+}
+/////////////////////////////////
+////////Checks whether m=n///////
+/////////////////////////////////
+proc complis22(list n,list m)
+ { 
+ int j=1;
+ if((size(n)!=0) && (size(m)!=0))
+ {
+  int i=1 ;
+  while((j==1) && (i<= size(n)))
+    {
+      if (n[i]!=m[i])
+        {
+          j=0;
+        }
+      i++;
+    }
+  }
+  if((size(n)==0) || (size(m)==0)) 
+  {
+    j=0
+  };    
+ return(j);
+}
+//////////////////////////////////////////
+///Whether the ideals m,n are equal. /////
+/////////////////////////////////////////
+proc complis33(ideal n,ideal m)
+ { 
+ int j=1;
+ if(size(n)==size(m))
+ {
+  int i=1 ;
+  while((j==1) && (i<= size(n)))
+    {
+      if (n[i]!=m[i])
+        {
+          j=0;
+        }
+      i++;
+    }
+  }
+  if(size(n) !=size(m)) 
+  {
+    j=0
+  };    
+return(j);
+}
+/////////////////////////////////////////////////////////
+//////Removes repetition in the vectors of Z.////////////
+/////////////////////////////////////////////////////////
+proc remrep(list g)
+{
+ int i ; int j;list L=g;int k=1;
+ for (i=1;i<=size(g);i++)
+   {
+     for (j=i+1; j<=size(g); j++)
+      {
+        if (complis22(g[i],g[j])==1)
+          {
+            L[j]=list();
+          }
+      }
+   }
+ int b=1;list S;
+ while( k<=size(L)) 
+   {
+     if (size(L[k])!=0)
+      {
+        S[b]=L[k];
+        b++;
+      }
+     k++;
+   };
+ return(S);
+}
+////////////////////////////////////////////////////////////////
+// g is a list of ideals. remrep2  removes repetition in g /////
+////////////////////////////////////////////////////////////////
+proc remrep2(list g)
+{
+ int i ; int j;list L=g;int k=1;
+ for (i=1;i<=size(g);i++)
+   {
+     for (j=i+1; j<=size(g); j++)
+      {
+        if (complis33(g[i],g[j])==1)
+          {
+            L[j]=list();
+          }
+      }
+   }
+ int b=1;list S;
+ while( k<=size(L)) 
+   {
+     if (size(L[k])!=0)
+      {
+        S[b]=L[k];
+        b++;
+      }
+     k++;
+   };
+ return(S);
+}
+//////////////////////////////////////////////
+////checks whther n[i]=m[i] for all i.////////
+//////////////////////////////////////////////
+proc colis2(list n, list m )
+{
+ int j=1;int i=1;
+ while((j==1) && (i<= size(n)))
+   {
+     if (complis22(n[i],m[i]) ==0)
+      {
+        j=0;
+      }
+     i++;
+   } 
+ return(j);
+}
+//////////////////////////////////////////////////
+////// Computes the ideal trans(g)[k].////////////
+//////////////////////////////////////////////////
+proc phimap (list g,int k)
+{
+
+int i;ideal p=g[1][k] ;
+for (i=2;i<=size(g);i++)
+ {
+   p=p,g[i][k];
+ }
+return (p);
+}
+////////////////////////////////////////////////
+/// computes the ideal lead(trans(g)[k])////////
+////////////////////////////////////////////////
+proc lphimap(list g, int k)
+{
+ int i;ideal p=lead(g[1][k]) ;
+ for (i=2;i<=size(g);i++)
+   {
+     p=p,lead(g[i][k]);
+   }
+return (p);
+}
+///////////////////////////////////////////////
+/// Computes all a, with a <= c.////////////////
+///////////////////////////////////////////////
+proc undcon(list c)
+{
+ list M=list();
+ if (size(c)==1)
+  {
+    list T=0;
+    int z; M[1]=T;
+     for (z=2;z<=c[1]+1;z++)
+        {
+          M[z]=list(z-1);
+        }
+   }
+ if (size(c) >1)
+   {
+     int i ; list L=c; int n=size(L);
+     L=delete(L,1);list S=undcon(L);
+     int j;int k=1;
+     for (i=1;i<= size(S);i++)
+        {
+          for (j=0;j<= c[1];j++)
+            {
+              M[k]=insert(S[i],j,0);
+              k++;
+            }
+        }
+   }
+ return(M);
+}
+//////////////////////////////////////////////////////////
+//Computes all a, with a <= c, with ai=/=0 for all i./////
+//////////////////////////////////////////////////////////
+proc undcon2(list c)
+{
+ list M=list();int z;
+ if (size(c)==1)
+  {
+   
+    
+    for (z=1;z<=c[1];z++)
+      { list p=z;
+        M[z]=p;
+      }
+ 
+   }
+
+ if(size(c) >1)
+  {
+    int i ; list L=c; int n=size(L);
+    L=delete(L,1);list S=undcon2(L);
+    int j;int k=1;
+    for (i=1;i<= size(S);i++)
+     {
+       for (j=1;j<= c[1];j++)
+        { 
+          M[k]=insert(S[i],j);
+         
+          k++;
+        }
+     }
+  }
+ return(M);
+}
+////////////////////////////////////////////
+// Computes n+m (Component-wise)////////////
+////////////////////////////////////////////
+proc suup2(list n, list m)
+{
+ int i; list L;
+ for(i=1;i<= size(n);i++)
+  {
+    L[i]=m[i]+n[i];
+  }
+ return(L);
+}
+/////////////////////////////////////////
+////Cumputes sum n[i].///////////////////
+/////////////////////////////////////////
+proc suup(list n)
+{
+ int i;int b;
+ for(i=1;i<= size(n);i++)
+  {
+    b=b+n[i];
+  }
+ return(b)
+}
+///////////////////////////////////////////////////////////
+///Checks whether Z is a zero vector./////////////////////
+/////////////////////////////////////////////////////////////
+proc vanlis(list Z)
+{
+ int i=1; int b=1; 
+ while( (b==1)&& (i<= size(Z)))
+   {
+     if (Z[i] !=0)
+    {
+     b=0;
+    }
+    i++;
+   }
+return(b);
+}
+
+///////////////////////////////////////////////////////////
+///// Removes the zero vectors from Z////
+/////////////////////////////////////////////////////////////
+proc rezer(list Z)
+{
+ int i; list L;int k=1;
+ for(i=1;i<=size(Z);i++)
+  {
+    if (vanlis(Z[i]) ==0)
+     {
+       L[k]=Z[i];
+       k++;
+     }
+  }
+return(L);
+}
+//////////////////////////////////////////
+///Returns 1 if c<=n, and 0 otherwise.////
+//////////////////////////////////////////
+proc compar(list n, list c)
+{
+ int i;list b;int j;
+ for (i=1;i<=size(n);i++)
+   {
+     if (n[i]==0)
+       {
+         b[i]=1;
+       }
+     if ( (n[i]) !=0 && ( c[i] <= n[i])  )
+       {
+         b[i]=1;
+       }
+    if(  (n[i] !=0) && ( n[i]<=c[i]) ) 
+       {
+         b[i]=0;
+       }
+   }
+ int x=1;
+ for (j=1;j<=size(n);j++)
+   {
+     if (b[j]==0)
+      {
+        x=0;
+      } 
+   }
+ return(x);
+}
+
+///////////////////////////////////////////////////////
+// Compute V(F) (Notation 2.6.3)///////////////////////
+///////////////////////////////////////////////////////
+proc val(list F)
+{
+ string r= "infinity"; int i;list L;
+ for (i=1;i<=size(F);i++)
+    {
+      if(F[i]==0)
+        {
+          L[i]=r;
+        }	
+      if(F[i]!=0)
+        {
+          int b=ord(F[i]);
+          L[i]=b;
+        }
+    }
+ return(L);
+}
+////////////////////////////////////////////
+////upper bounds a,b with (a.n^T)+(b.m^T)<c.
+////////////////////////////////////////////
+proc bouns(list n , list m, int c)
+{
+ list L;int i;int j;list L1; list L2; 
+ int k1; int b1=n[1];
+ for(k1=2;k1<=size(n); k1++)
+   { 
+     b1=min(b1,n[k1]);
+   }
+ int k2; int b2=m[1];
+ for(k2=2;k2<=size(m); k2++)
+   {
+     b2=min(b2,m[k2]);
+   }
+ for(i=1;i<=size(n);i++)
+   {
+     L1[i]= c div (n[i]+b2); 
+   }
+ for(i=1;i<=size(m);i++)
+  {
+    L2[i]= c div (m[i]+b1); 
+  }
+ list L=L1,L2;
+ return(L);
+}
+///////////////////////////////////////////
+/// Computes b=min{n[i], n[i]=/=0}.///////
+//////////////////////////////////////////
+proc minlist ( list n)
+{
+ int k1; int b=finnonzero(n);
+ 
+ for(k1=1;k1<=size(n); k1++)
+   { 
+     if(n[k1]!=0)
+       {
+         b=min(b,n[k1]);
+       } 
+   }
+   
+ return(b);
+}
+/////////////////////////////////////////////////////////////////////
+////For all i, T[i] consists of all possible lists T[i][j] such that/
+////(T[i][j][1]).n^T+ (T[i][j][2]).m^T <=c. ///////////////////////// 
+////////////////////////////////////////////////////////////////////
+proc ordProideal(list n, list m, int c) ////// returns all posible producst <= c
+{
+
+ list L=bouns(n,m,c); 
+ list L1=L[1]; list L2=L[2];
+ list F1=delete(undcon(L1),1); list F2=undcon(L2);int b;list F;list T;
+ int i; int j;
+ int k;
+
+ for (k=minlist(n);k<=c;k++)
+   {
+     T[k]=list();
+   }
+ for(i=1;i<=size(F1);i++)
+   {
+     for(j=1;j<=size(F2);j++)
+       {
+         b=sca(F1[i],n)+sca(F2[j],m);
+         if((b<= c) && (sca(F1[i],n)!=0) && (b!=0) )
+           {
+             F=F1[i],F2[j];
+             T[b]= insert(T[b],F);
+           }
+       }
+   }
+ return(T);
+}
+////////////////////////////////////////////////////
+/////Computes the polynomial  n^a.//////////////////
+////////////////////////////////////////////////////
+proc prodideal(list n, list a)
+{
+ int i; poly f=1;
+ for(i=1;i<=size(n);i++)
+  {
+   f=f*power(n[i],a[i]);
+  }
+ return(f);
+}
+///////////////////////////////////////////////////////////////////////////
+///For all i< c. M[i] consists of all possible ptodcucts n^a.m^b of ord i./
+///////////////////////////////////////////////////////////////////////////
+proc prodideal2(list n2,list m2 ,int c)
+{
+ list n=proj(n2);list m=proj(m2);
+ list n1= val3(n); list m1=val3(m);
+ int i; list L=ordProideal(n1,m1,c); int j;
+ list M; int k;int y=minlist(n1);
+ for(k=y;k<= c ;k++)
+   {
+     M[k]=list();
+   }
+ for (i=y; i<= c; i++)
+   {
+     if(size(L[i])> 0)
+       {
+         for (j=1; j<= size(L[i]); j++)
+           {
+               M[i]=insert(M[i],((prodideal(n,L[i][j][1])) * (prodideal(m,L[i][j][2]))));
+           }
+       }
+     M[i]=remrep(M[i]);
+    }
+ return(M);
+}
+////////////////////////////////////////////////////////////////
+///Computes S defined in step (3), Algorithm 3.2.11/////////////
+////////////////////////////////////////////////////////////////
+proc singiter(list n, list m,int c)
+{
+ list L=prodideal2(n,m,c);int i ; int j; int k;poly co;list M;poly b;
+ int t=1;int n1= minlist(val3(n));
+ for (i=n1; i<= c; i++)
+    {
+      if (size(L[i]) !=0)
+        {
+          for (j=1; j<= size(L[i]); j++)
+             {
+               for (k=j+1; k<= size(L[i]); k++)
+                  { 
+                    co= leadcoef(L[i][j]) / leadcoef(L[i][k]);
+                    b=L[i][j] - co* L[i][k];
+                    if(ord(b)<= c)
+                        { 
+                          M[t]=b;
+                          t++;
+                        }                
+                  }
+             }
+         }
+     }
+ return(M);
+}
+////////////////////////////////////////////////////////////////
+///// normal form of f by (n,m) up to c) (Definition 3.2.10)////
+////////////////////////////////////////////////////////////////
+proc singred(poly f,list n, list m,int c)
+{ 
+ list M= prodideal2(n,m,c); int k1=minlist(val3(n));int k2;list L; poly b;poly h=f;int w=1; 
+if(k1<= ord(h))
+{
+ while(ord(h)<=c && (w==1) && (h!=0))
+{ 
+     
+     if(size(M[ord(h)])!=0)
+        {   
+           b= leadcoef(h) div leadcoef(M[ord(h)][1]);
+           h=h-b*M[ord(h)][1];
+       
+        }
+      if( (h!=0) && (ord(h)<=c))
+     { 
+     if(size(M[ord(h)])==0)
+        {
+          w=0;
+        } }
+ }
+}
+ return(h);
+}
+///////////////////////////////////////////////////////////////
+////One iteration of the While-loop in Algorithm 3.2.11////////
+//////////////////////////////////////////////////////////////
+proc gamma2(list n, list m,int c)
+{
+ int i;list L=singiter(n,m,c); list M;poly h;int k=1;
+ for(i=1; i<= size(L); i++)
+   { 
+
+     h=singred(L[i],n,m,c);
+     if(h !=0) 
+       {
+        if (ord(h)<=c)
+          {  
+            M[k]= h;
+            k++;
+          }
+       }
+   }
+ return(M);
+}
+/////////////////////////////////////////////
+///////// g' in Algorithm 3.2.11 ////////////
+/////////////////////////////////////////////
+proc combas(list n, list m,int c)
+{
+ list L=gamma2(n,m,c);int i;list T=n;
+
+ while(size(L)!=0)
+  {
+    for (i=1;i<= size(L);i++)
+      {
+        T=insert(T,L[i]);
+      };
+
+    L=gamma2(T,m,c);
+ 
+  }
+ int j;list M= prodideal2(T,m,2*c);
+  for (j=c;j<= 2*c;j++)
+    { 
+      if(size(M[j])==0) 
+       {
+          T=insert(T,power(t,j));
+       }
+    }
+
+ T=remrepsin(T);
+return(T);
+}
+////////////////////////////////////////////
+////Algorithm 3.2.11.///////////////////////
+////////////////////////////////////////////
+proc combas2(list n, list m, int c)
+{
+ list m1=combas(m,m,c);
+ list n1=combas(n,m1,c);
+ list T=(n1,m1);
+ return(T)
+}
+
+
+
+//////////////////////////////////////////
+////// Checks whether n=>m.///////////////
+//////////////////////////////////////////
+proc Comtwolists(list n,list m)
+{
+ int i=1; int b=1;
+ while((b==1) && (i<=size(n)))
+ {
+   if(((n[i] < m[i]) && (n[i]!=0))  || ((m[i]==0 ) && (n[i] !=0)) )
+    {
+      b=0;
+
+    }
+   i++;
+ }
+
+return(b)
+}
+//////////////////////////////////////////
+//// checks whether S=L /////////////////
+/////////////////////////////////////////
+proc compar2(list S, list L)
+{
+ int i;list b;
+
+ for(i=1;i<= size(L); i++)
+   {
+     if (complis22(L[i],S[i])==1)
+      { 
+        b[i]=1;}
+       if (complis22(L[i],S[i])==0)
+        {
+         b[i]=0;
+        }   
+   }
+int j; int a=1;
+ for(j=1;j<=size(L);j++)
+  {
+   if (b[j] ==0)
+   {
+     a=0;
+   }
+  }
+ return(a);  
+}
+//////////////////////////////////////////
+//// computes min{n,m}. //////////////////
+//////////////////////////////////////////
+proc minva(list n,list m)
+{
+ int i; list L;
+ for(i=1;i<= size(n); i++)
+ {
+   if( leadcoef(n[i]) != -leadcoef(m[i]) )
+   {
+     L[i]=n[i]+m[i];
+   }
+   if( leadcoef(n[i]) == -leadcoef(m[i])  )
+   {
+     L[i]=m[i]-n[i];
+   }
+ }
+return (L)
+}
+///////////////////////////////////////////
+//// computes small Gamma. ////////////////
+///////////////////////////////////////////
+proc SmallGamma (list L, list c)
+{
+
+ list H1=bouneles(L);list H2=list();int i;int j;list T;list F;
+       
+ while(compar2(H1,H2)==1)
+   { 
+     F=H1;
+     for(i=1;i<=size(H1);i++)
+        {
+          for(j=i+1;j<=size(H1); j++)
+            {
+              T=minva(H1[i],H1[j]);
+              if( (complis22(T,H1[i])==0) && (complis22(T,H1[j])==0))
+                 {
+                   F=insert(F,T);
+                 }
+            }
+    
+        } 
+    H2=H1;
+    H1=F;
+   }
+ int z;list S;  F=remrep3(F);  list T; int u=1; list b;
+  for (z=1;z<=size(F);z++)
+     { 
+       list Q=val3(F[z]);
+     
+       if(Comtwolists(c,Q)==1)
+           {   
+              T[u]=F[z];
+             u++;
+           }
+ 
+     } 
+
+ for (z=1;z<=size(T);z++)
+     {
+       S[z]=val(T[z]);
+     } 
+
+ list P=S,T;
+return(P)
+}
+///////////////////////////////////////////////////////////////////////////////////
+//////Computes all posible g-products that are not larger than the conductor./////
+///////////////////////////////////////////////////////////////////////////////////
+proc bouneles(list L )
+{
+ list F=reguelem(L); 
+list g=F[1]; list c=F[2];
+ list ga;list valg;list S;int k=1;int j;int i;list a;list b;int d;
+  
+ for(i=1;i<=size(g);i++)
+    {
+      a[i]=minlist(val3(g[i]));
+      d= mincom(val3(g[i]));
+      
+      b[i]=c[d] div a[i];
+    }                                                                            //////// b[i] is the upper bound of the power of g[i].///
+
+ list R= delete(undcon(b),1);
+
+ for(j=1;j<=size(R);j++)
+    {
+       
+     ga=gproda(g,R[j]);  
+    
+     valg=val3(ga);
+   
+    if( Comtwolists(valg,c)==0 )                                                       ///// S is the list of all posible g-products which are not larger than the concuctor.//// 
+        {
+          S[k]=ga;
+          k++; 
+    
+        }
+        
+     }
+
+     S=remrep(S);
+    return (S) ;   
+}                                           
+ //////////////////////////////////////////////////////////
+ ////// Computes  elemenst of the boundary of small(Gamma)./// 
+ /////////////////////////////////////////////////////////////
+proc bounelemnts( list L, list c)
+{  
+ list S=SmallGamma(L,c)[2]; 
+ int u=1;list com ;int t;list F;int r; list c=reguelem(L)[2];
+ for(r=1;r<= size(S);r++)
+   {
+     com=commoncomp(val3((S[r])),c);
+     if (size(com)!=0)
+     {
+       F[u]=S[r];
+     
+       for(t=1;t<= size(com);t++)
+       {
+         F[u][com[t]]=0;
+       }
+       u++;
+     }
+   }         
+  return(F);      
+}
+//////////////////////////////////
+////Find a non zero element in Z/////
+///////////////////////////////////
+proc finnonzero (Z)
+{
+ int i=1; int k=0;
+ while ((k==0) && (i<= size(Z)))
+  {
+    if(Z[i] !=0)
+      {
+         k=Z[i];
+      }
+    i++;
+  }
+return(k);
+}
+///////////////////////////////////////////////////////
+///////Finds a component of n with a minimal val. /////
+/////////////////////////////////////////////////////// 
+proc mincom(list n)
+{
+ int i; int b=1;
+ for(i=1;i<=size(n);i++)
+  {
+    if( ((n[i]!=0)&& (b!=0) &&(b> n[i])) || ((n[i]!=0) && (n[b]==0)))
+      {
+       b=i;
+      }
+  }
+
+return(b);
+}
+
+////////////////////////////////////////////////////
+///////Computes the common components of n and m.///
+////////////////////////////////////////////////////
+proc commoncomp( list n, list m)
+{
+ int i ; list F;
+ for(i=1;i<=size(n);i++)
+   {
+     if(n[i]==m[i])
+     {
+       F=insert(F,i);
+     }
+     
+   }
+return(F);
+}
+////////////////////////////////////////////////////
+///////Checks whether f in A=K[[g]].////////////////
+////////////////////////////////////////////////////
+proc Membership(list f, list L)
+{
+ list S=StaAlgeb(L); list g=S[1];list c=S[2];
+ int b=vanlis(reduc(f,g,c)); 
+ 
+ return(b);
+}
+
+////////////////////////////////////////////////////
+///////Algorithm 3.4.2 /////////////////////////////
+////////////////////////////////////////////////////
+proc GammaMemb(list n,list m)
+{
+  int s=size(n);int r=size(m);
+  int i ;int i1;int j=1;int k;list L=trans(m);list a=0; list alpha; for(i1=1;i1<=size(n); i1++){alpha[i1]=a;}
+  for(i=1;i<=s; i++) 
+    {
+ 
+     
+      for(j=1;j<=size(prod(n[i],L[i])); j++)
+         {
+            int b=1;
+            for(k=1;k<=s; k++)
+               {
+                 if(sca(L[k],prod(n[i],L[i])[j]) < n[k]) { b=0;}
+
+               }  
+            if (b==1) {alpha[i]= prod(n[i],L[i])[j];}
+         }
+    }
+
+
+  int c=1;int h;
+  for(h=1;h<=s; h++) 
+    {
+       if (size(alpha[h])==1)
+          {
+             c=0;
+          }
+     }
+ if (c==0) {return (c)};
+ if (c==1) {list V= alpha; return(V)}
+}
+
+/////////////////////////////////////////////////////////
+/////// remove repetation of elements of the samme order./
+/////////////////////////////////////////////////////////
+proc remrepsin(list n)
+{ 
+ int i ; int j;list L=n;int k=1;
+ for (i=1;i<=size(n);i++)
+   {
+     for (j=i+1; j<=size(n); j++)
+      {
+        if (ord(n[i])==ord(n[j]))
+          {
+            L[j]=list();
+          }
+      }
+   }
+ int b=1;list S;
+ while( k<=size(L)) 
+   {
+     if (size(L[k])!=0)
+      {
+        S[b]=L[k];
+        b++;
+      }
+     k++;
+   };
+ return(S);
+
+}
+
+/////////////////////////////////////////////////////////
+/////// remove repetation of elements of the samme order 2./
+/////////////////////////////////////////////////////////
+
+proc remrep3(list g)
+{
+int i ; int j;list L=g;int k=1;
+ for (i=1;i<=size(g);i++)
+   {
+     for (j=i+1; j<=size(g); j++)
+      {
+        if (complis22(val3(g[i]),val3(g[j]))==1)
+          {
+            L[j]=list();
+          }
+      }
+   }
+ int b=1;list S;
+ while( k<=size(L)) 
+   {
+     if (size(L[k])!=0)
+      {
+        S[b]=L[k];
+        b++;
+      }
+     k++;
+   };
+ return(S);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
